@@ -1,5 +1,4 @@
-require('dotenv').config()
-const API_BASE = process.env.RENDER_URL;
+const API_BASE = import.meta.env.VITE_API_BASE
 
 // The access token lives only in memory, never localStorage — same
 // reasoning as the backend design: a token JS can hold, JS can also leak
