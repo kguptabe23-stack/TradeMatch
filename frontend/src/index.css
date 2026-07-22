@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette from the "Trust Teal + Action Coral" design direction:
+     teal is the primary brand/secondary-action color, coral is reserved
+     for the swipe-right / match moment only (60/30/10 discipline). */
+  --color-brand-teal: #00a896;
+  --color-brand-coral: #ff6f59;
+
+  --font-poppins: "Poppins", system-ui, sans-serif;
+  --font-inter: "Inter", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-inter);
+}
