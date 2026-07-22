@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:4000";
+require('dotenv').config()
+const API_BASE = process.env.RENDER_URL;
 
 // The access token lives only in memory, never localStorage — same
 // reasoning as the backend design: a token JS can hold, JS can also leak
