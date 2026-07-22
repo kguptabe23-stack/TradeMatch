@@ -15,7 +15,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'https://barter.vercel.app'], // Vite dev server
+    origin: ['http://localhost:5173', 'https://barter-virid.vercel.app'], // Vite dev server
     credentials: true, // allow the refresh-token cookie to be sent
   })
 );
