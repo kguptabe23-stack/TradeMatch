@@ -26,7 +26,7 @@ export default function BrandMark({ size = 30, textClassName = "text-xl" }) {
         </svg>
       </div>
       <span className={`font-poppins font-bold ${textClassName} text-[#121212] tracking-[-0.01em]`}>
-        Barter
+        TradeMatch
       </span>
     </div>
   );
