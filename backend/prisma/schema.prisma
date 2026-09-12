@@ -31,14 +31,15 @@ model Listing {
   id          String        @id @default(uuid())
   ownerId     String
   owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
   title       String
   description String
-  // Up to 9 photos, ordered — index 0 is the cover photo shown everywhere
-  // a single thumbnail is needed (feed card back, matches list, chat).
-  // At least 1 is required; enforced at the application layer since
-  // Postgres/Prisma have no "non-empty array" column constraint.
+  category    String
+  condition   String
+  tags        String[]
   imageUrls   String[]
   wantedTags  String[]
+
   status      ListingStatus @default(ACTIVE)
   createdAt   DateTime      @default(now())
 
@@ -48,6 +49,7 @@ model Listing {
 
   @@index([ownerId])
   @@index([status])
+  @@index([category])
 }
 
 enum SwipeDirection {
