@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { hasActiveListing } from "../auth/postAuthRedirect";
 import BrandMark from "../components/BrandMark";
 import { FormField, inputClassName } from "../components/FormField";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
@@ -15,25 +15,41 @@ export default function LoginPage() {
 
   function validate() {
     const errs = {};
-    if (!email.trim()) errs.email = "Email is required";
-    if (!password) errs.password = "Password is required";
+
+    if (!email.trim()) {
+      errs.email = "Email is required";
+    }
+
+    if (!password) {
+      errs.password = "Password is required";
+    }
+
     return errs;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+
     const clientErrors = validate();
-    if (Object.keys(clientErrors).length) {
+
+    if (Object.keys(clientErrors).length > 0) {
       setErrors(clientErrors);
       return;
     }
+
     setErrors({});
     setLoading(true);
+
     try {
-      await login(email, password);
-      navigate((await hasActiveListing()) ? "/feed" : "/listings/new?gate=1");
+      // Login and store the access token through AuthContext.
+      await login(email.trim(), password);
+
+      // Go directly to Feed after successful authentication.
+      navigate("/feed", { replace: true });
     } catch (err) {
-      setErrors({ form: err.message });
+      setErrors({
+        form: err.message || "Login failed. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -44,15 +60,23 @@ export default function LoginPage() {
       <div className="flex justify-center mb-1.5">
         <BrandMark size={32} />
       </div>
+
       <div className="text-center mt-1.5">
-        <div className="font-poppins font-bold text-[22px] text-[#121212]">Welcome back</div>
+        <div className="font-poppins font-bold text-[22px] text-[#121212]">
+          Welcome back
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-[18px] mt-[18px]">
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-[18px] mt-[18px]"
+      >
         {errors.form && (
           <div className="bg-[#FDECEA] text-[#C0392B] text-sm px-3.5 py-2.5 rounded-[10px]">
             {errors.form}
           </div>
         )}
+
         <FormField label="Email" error={errors.email}>
           <input
             className={inputClassName}
@@ -60,8 +84,10 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            autoComplete="email"
           />
         </FormField>
+
         <FormField label="Password" error={errors.password}>
           <input
             className={inputClassName}
@@ -69,8 +95,10 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
+            autoComplete="current-password"
           />
         </FormField>
+
         <button
           type="submit"
           disabled={loading}
@@ -78,6 +106,7 @@ export default function LoginPage() {
         >
           {loading ? "Logging in…" : "Log in"}
         </button>
+
         <div className="text-center text-[13px] text-[#777]">
           New here?{" "}
           <Link to="/signup" className="text-brand-teal font-medium">
