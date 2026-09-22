@@ -29,13 +29,13 @@ function canonicalPair(
 }
 
 /*
- * Call this after recording a RIGHT swipe.
+ * Called after a RIGHT swipe.
  *
- * A match is a specific pair of listings:
+ * A match occurs when:
  *
- * User A RIGHT-swipes on User B's listing
+ * User A RIGHT-swipes User B's listing
  * +
- * User B RIGHT-swiped on User A's listing
+ * User B RIGHT-swiped User A's listing
  * =
  * Match
  */
@@ -43,68 +43,59 @@ async function detectMatches({
   swiperUserId,
   listing,
 }) {
-  /*
-   * Defensive ownership check.
-   *
-   * The listing being matched must belong to the
-   * user who owns it. This protects the service if
-   * it is ever reused from another controller.
-   */
-  if (!listing || listing.ownerId !== swiperUserId) {
+  if (!listing) {
     return [];
   }
 
   /*
-   * Find listings owned by the current swiper that
-   * the other user has already liked.
+   * The current user just RIGHT-swiped `listing`.
    *
-   * Example:
+   * Therefore:
    *
-   * Current user owns:
-   *   Sony headphones
+   * listing.ownerId = the OTHER user
+   * swiperUserId   = the CURRENT user
    *
-   * Other user previously RIGHT-swiped:
-   *   Sony headphones
-   *
-   * Current user just RIGHT-swiped:
-   *   Other user's AirPods
-   *
-   * => these two listings form a match.
+   * We now look for RIGHT swipes made by the
+   * other user on listings owned by the current user.
    */
-  const reciprocalSwipes =
-    await prisma.swipe.findMany({
-      where: {
-        swiperUserId: listing.ownerId,
-        direction: "RIGHT",
+  const reciprocalSwipes = await prisma.swipe.findMany({
+    where: {
+      swiperUserId: listing.ownerId,
+      direction: "RIGHT",
 
-        listing: {
-          ownerId: swiperUserId,
-          status: "ACTIVE",
-        },
+      listing: {
+        ownerId: swiperUserId,
+        status: "ACTIVE",
       },
+    },
 
-      select: {
-        listingId: true,
-      },
-    });
+    select: {
+      listingId: true,
+    },
+  });
 
   const createdMatches = [];
 
   for (const {
-    listingId: theirLikedListingId,
+    listingId: reciprocalListingId,
   } of reciprocalSwipes) {
     /*
-     * Avoid accidentally matching a listing with itself.
+     * Prevent a listing from matching with itself.
      */
-    if (theirLikedListingId === listing.id) {
+    if (reciprocalListingId === listing.id) {
       continue;
     }
 
+    /*
+     * Make sure the reciprocal listing still exists
+     * and still belongs to the current swiper.
+     */
     const reciprocalListing =
       await prisma.listing.findUnique({
         where: {
-          id: theirLikedListingId,
+          id: reciprocalListingId,
         },
+
         select: {
           id: true,
           ownerId: true,
@@ -112,10 +103,6 @@ async function detectMatches({
         },
       });
 
-    /*
-     * The reciprocal listing must still exist,
-     * belong to the swiper, and remain active.
-     */
     if (
       !reciprocalListing ||
       reciprocalListing.ownerId !== swiperUserId ||
@@ -124,6 +111,9 @@ async function detectMatches({
       continue;
     }
 
+    /*
+     * Create a deterministic A/B listing pair.
+     */
     const pair = canonicalPair(
       listing.id,
       listing.ownerId,
@@ -132,10 +122,6 @@ async function detectMatches({
     );
 
     try {
-      /*
-       * The database unique constraint on the match pair
-       * prevents duplicate matches.
-       */
       const match = await prisma.match.create({
         data: pair,
 
@@ -162,10 +148,8 @@ async function detectMatches({
       createdMatches.push(match);
     } catch (err) {
       /*
-       * P2002 means the same listing pair already matched.
-       *
-       * This is safe to ignore because the desired state
-       * already exists.
+       * P2002 means this listing pair already has
+       * a match. That's safe to ignore.
        */
       if (err.code === "P2002") {
         continue;

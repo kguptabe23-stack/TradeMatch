@@ -28,16 +28,20 @@ async function feed(req, res) {
       ownerId: {
         not: req.userId,
       },
+
       ...(excludedListingIds.length > 0 && {
         id: {
           notIn: excludedListingIds,
         },
       }),
     },
+
     orderBy: {
       createdAt: "desc",
     },
+
     take: FEED_LIMIT,
+
     include: {
       owner: {
         select: {
@@ -48,7 +52,9 @@ async function feed(req, res) {
     },
   });
 
-  return res.status(200).json({ listings });
+  return res.status(200).json({
+    listings,
+  });
 }
 
 async function create(req, res) {
@@ -66,6 +72,7 @@ async function create(req, res) {
     });
   }
 
+  // Find the listing being swiped on
   const listing = await prisma.listing.findUnique({
     where: {
       id: listingId,
@@ -88,9 +95,9 @@ async function create(req, res) {
 
   try {
     /*
-     * The database unique constraint on:
+     * Database constraint:
      *
-     * [swiperUserId, listingId]
+     * @@unique([swiperUserId, listingId])
      *
      * guarantees that one user can only swipe once
      * on a particular listing.
@@ -104,7 +111,7 @@ async function create(req, res) {
     });
 
     /*
-     * Only RIGHT swipes can produce a match.
+     * Only RIGHT swipes can create matches.
      */
     let matches = [];
 
@@ -122,10 +129,6 @@ async function create(req, res) {
   } catch (err) {
     /*
      * Prisma P2002 = unique constraint violation.
-     *
-     * This can happen even if two requests arrive
-     * almost simultaneously. The database remains the
-     * final source of truth.
      */
     if (err.code === "P2002") {
       return res.status(409).json({
