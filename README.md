@@ -1,28 +1,55 @@
-# Barter 🔄
+# 🔄 TradeMatch
 
-A Tinder-style swipe app for bartering used items. No money, no buying or selling—just direct item-for-item trades. Users upload items they want to get rid of, swipe on things they want, and if there's a mutual match, they get put into a chat to negotiate the swap.
+### Intelligent Peer-to-Peer Barter Marketplace
 
-## Tech Stack
+TradeMatch is a full-stack peer-to-peer barter platform where users can list items they want to exchange, discover potential trades, swipe on listings, receive reciprocal matches, and communicate through an integrated chat system.
 
-*   **Frontend:** React (Vite) + CSS/Tailwind
-*   **Backend:** Node.js, Express
-*   **Database:** PostgreSQL, Prisma ORM
-*   **Authentication:** Custom JWT (Access + Refresh tokens), bcrypt
-*   **Image Storage:** ImageKit
+> **Live Demo:** https://tradematchapp.vercel.app  
+> **Backend API:** https://tradematch-backend.onrender.com
 
-## MVP Features
+---
 
-*   **Secure Auth:** JWT-based login/signup flow.
-*   **Listing Management:** Full CRUD for user items, including image uploads and "wanted" tags.
-*   **Swipe Engine:** Tinder-style right/left swiping on the feed.
-*   **Match Detection:** System automatically detects mutual right-swipes and creates a Match instance.
-*   **Chat:** Match-specific messaging (currently using short-polling) to coordinate the actual trade.
+## ✨ Features
 
-## Database Schema Model
+### 🔐 Authentication
+- User signup and login
+- JWT-based access authentication
+- Refresh-token authentication using HTTP-only cookies
+- Protected API routes
+- Secure logout and session invalidation
 
-For a quick overview of how the data is structured:
-*   `User`: Authentication and profile details.
-*   `Listing`: The item being traded (belongs to a User, contains image URLs and status).
-*   `Swipe`: Records a user's swipe direction on a specific listing.
-*   `Match`: Generated when User A swipes right on Listing B, and User B swipes right on Listing A.
-*   `Message`: Chat messages tied to a specific Match.
+### 📦 Listing Management
+- Create, edit and manage barter listings
+- Listing title and description
+- Categories and item conditions
+- Tags and wanted tags
+- Multiple image support
+- Image upload through ImageKit
+
+### 👆 Swipe-Based Discovery
+- Browse available barter listings
+- Swipe **RIGHT** to express interest
+- Swipe **LEFT** to skip a listing
+- Prevents duplicate swipes
+- Automatically excludes the user's own listings
+
+### 🤝 Reciprocal Matching
+A match is created when two users express interest in each other's listings.
+
+```text
+User A
+  │
+  │ RIGHT swipe
+  ▼
+User B's Listing
+  │
+  │
+  ▼
+User B
+  │
+  │ RIGHT swipe
+  ▼
+User A's Listing
+  │
+  ▼
+🎉 MATCH
