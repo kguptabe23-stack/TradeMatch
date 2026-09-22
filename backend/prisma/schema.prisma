@@ -8,86 +8,66 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-
-  refreshTokens RefreshToken[]
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
   listings      Listing[]
-  swipes        Swipe[]
   matchesAsA    Match[]        @relation("MatchUserA")
   matchesAsB    Match[]        @relation("MatchUserB")
   sentMessages  Message[]
-}
-
-enum ListingStatus {
-  ACTIVE
-  ARCHIVED
+  refreshTokens RefreshToken[]
+  swipes        Swipe[]
 }
 
 model Listing {
   id          String        @id @default(uuid())
   ownerId     String
-  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-
   title       String
   description String
+  wantedTags  String[]
+  status      ListingStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  imageUrls   String[]
   category    String
   condition   String
   tags        String[]
-  imageUrls   String[]
-  wantedTags  String[]
-
-  status      ListingStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  matchesAsA  Match[]       @relation("MatchListingA")
+  matchesAsB  Match[]       @relation("MatchListingB")
   swipes      Swipe[]
-  matchesAsA  Match[] @relation("MatchListingA")
-  matchesAsB  Match[] @relation("MatchListingB")
 
   @@index([ownerId])
   @@index([status])
   @@index([category])
 }
 
-enum SwipeDirection {
-  LEFT
-  RIGHT
-}
-
 model Swipe {
   id           String         @id @default(uuid())
   swiperUserId String
-  swiper       User           @relation(fields: [swiperUserId], references: [id], onDelete: Cascade)
   listingId    String
-  listing      Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
   direction    SwipeDirection
   createdAt    DateTime       @default(now())
+  listing      Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  swiper       User           @relation(fields: [swiperUserId], references: [id], onDelete: Cascade)
 
   @@unique([swiperUserId, listingId])
   @@index([listingId])
 }
 
-// A canonical pair of listings that liked each other. listingAId is always
-// the lexicographically smaller listing id, regardless of which user's
-// swipe triggered the match — this guarantees the same pair always maps to
-// the same row, so the unique constraint below can't be bypassed by
-// creating the pair "from the other direction."
 model Match {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   listingAId String
-  listingA   Listing  @relation("MatchListingA", fields: [listingAId], references: [id], onDelete: Cascade)
   listingBId String
-  listingB   Listing  @relation("MatchListingB", fields: [listingBId], references: [id], onDelete: Cascade)
   userAId    String
-  userA      User     @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
   userBId    String
-  userB      User     @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-
-  messages Message[]
+  createdAt  DateTime  @default(now())
+  listingA   Listing   @relation("MatchListingA", fields: [listingAId], references: [id], onDelete: Cascade)
+  listingB   Listing   @relation("MatchListingB", fields: [listingBId], references: [id], onDelete: Cascade)
+  userA      User      @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB      User      @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages   Message[]
 
   @@unique([listingAId, listingBId])
 }
@@ -95,15 +75,12 @@ model Match {
 model Message {
   id        String   @id @default(uuid())
   matchId   String
-  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
   senderId  String
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   text      String
   createdAt DateTime @default(now())
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-  // Every query in this feature is "messages for match X, newer than Y,
-  // ordered by time" — this composite index matches that access pattern
-  // exactly, so both the filter and the sort can use the same index.
   @@index([matchId, createdAt])
 }
 
@@ -111,7 +88,17 @@ model RefreshToken {
   id        String   @id @default(uuid())
   tokenHash String   @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ListingStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum SwipeDirection {
+  LEFT
+  RIGHT
 }
