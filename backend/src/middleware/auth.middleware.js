@@ -11,9 +11,10 @@ function requireAuth(req, res, next) {
     const payload = verifyAccessToken(token);
     req.userId = payload.sub;
     return next();
-  } catch {
-    return res.status(401).json({ error: "invalid or expired access token" });
-  }
+  } catch (err) {
+  console.error("ACCESS TOKEN VERIFY ERROR:", err.name, err.message);
+  return res.status(401).json({ error: "invalid or expired access token" });
+}
 }
 
 module.exports = { requireAuth };
